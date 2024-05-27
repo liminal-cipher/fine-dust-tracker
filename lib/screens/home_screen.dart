@@ -56,8 +56,10 @@ class _HomeScreenState extends State<HomeScreen> {
       final pm25AirQuality = currentStation.pm25AirQuality();
       final backgroundColor = currentStation.backgroundColor();
 
-      final koreanTimeFormat = DateFormat('a h시', 'ko_KR');
-      final formattedTime = koreanTimeFormat.format(dataTime);
+      final lastUpdatedTime = DateFormat('M월 dd일\na h시', 'ko')
+          .format(dataTime)
+          .replaceAll('AM', '오전')
+          .replaceAll('PM', '오후');
 
       return Container(
         decoration: BoxDecoration(
@@ -78,18 +80,19 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 currentAddr,
                 style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 25),
+              // 정보 기준 시각
+              Text(
+                "$lastUpdatedTime 기준",
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w500,
                 ),
-              ),
-              const SizedBox(height: 5),
-              // 정보 기준 시각
-              Text(
-                "$formattedTime 기준",
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 50),
               Padding(
