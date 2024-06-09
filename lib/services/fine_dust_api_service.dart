@@ -19,7 +19,7 @@ Future<MeasurementStation?> fineDustAPIService() async {
           'stationName': current.stationName,
           'dataTerm': 'daily',
           'returnType': 'xml',
-          'serviceKey': dotenv.env['FINE_DUST_API_KEY'],
+          'serviceKey': dotenv.env['API_KEY'],
           'ver': '1.3',
         },
       );
