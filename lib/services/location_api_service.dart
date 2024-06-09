@@ -64,7 +64,7 @@ Future<MeasurementStation?> locationAPIService() async {
   for (var attemptCount = 0; attemptCount < maxAttempts; attemptCount++) {
     final nearbyMsrstnURL = Uri.parse(searchByTMURL).replace(
       queryParameters: {
-        'serviceKey': dotenv.env['LOCATION_API_KEY'],
+        'serviceKey': dotenv.env['API_KEY'],
         'returnType': 'xml',
         'tmX': tmCoord.x.toString(),
         'tmY': tmCoord.y.toString(),
