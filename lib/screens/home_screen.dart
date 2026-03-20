@@ -191,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          '$pm10Value ㎛',
+                          '$pm10Value ㎍/m³',
                           style: const TextStyle(fontSize: 18),
                         ),
                       ],
@@ -210,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          '$pm25Value ㎛',
+                          '$pm25Value ㎍/m³',
                           style: const TextStyle(fontSize: 18),
                         ),
                       ],
@@ -259,7 +259,16 @@ class _HomeScreenState extends State<HomeScreen> {
           final station = _filteredStations[index];
           return ListTile(
             title: Text(station.currentAddr),
-            onTap: () {},
+            onTap: () {
+              setState(() {
+                _isSearching = false;
+                _isSearchResultsVisible = false;
+                _searchController.clear();
+                _filteredStations.clear();
+                _measurementStationFuture =
+                    fineDustAPIServiceByStation(station);
+              });
+            },
           );
         },
       ),
