@@ -30,22 +30,54 @@ Future<MeasurementStation?> fineDustAPIService() async {
         final firstItem = responseData.findAllElements('item').firstOrNull;
 
         if (firstItem != null) {
-          final pm10ValueElement =
-              firstItem.findAllElements('pm10Value').single.innerText;
-          final pm25ValueElement =
-              firstItem.findAllElements('pm25Value').single.innerText;
-          final dataTimeElement =
-              firstItem.findAllElements('dataTime').single.innerText;
-
-          current.pm10Value = int.tryParse(pm10ValueElement) ?? 0;
-          current.pm25Value = int.tryParse(pm25ValueElement) ?? 0;
-          current.dataTime = DateTime.parse(dataTimeElement);
-
+          current.pm10Value = int.tryParse(
+                  firstItem.findAllElements('pm10Value').single.innerText) ??
+              0;
+          current.pm25Value = int.tryParse(
+                  firstItem.findAllElements('pm25Value').single.innerText) ??
+              0;
+          current.dataTime = DateTime.parse(
+              firstItem.findAllElements('dataTime').single.innerText);
           return current;
         }
       }
+      attemptCount++;
     }
-    attemptCount++;
+  }
+  return null;
+}
+
+Future<MeasurementStation?> fineDustAPIServiceByStation(
+    MeasurementStation station) async {
+  String searchByMsrstnNameURL =
+      "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty";
+
+  Uri msrstnURL = Uri.parse(searchByMsrstnNameURL).replace(
+    queryParameters: {
+      'stationName': station.stationName,
+      'dataTerm': 'daily',
+      'returnType': 'xml',
+      'serviceKey': dotenv.env['API_KEY'],
+      'ver': '1.3',
+    },
+  );
+
+  final response = await http.get(msrstnURL);
+  if (response.statusCode == 200) {
+    final responseData = xml.XmlDocument.parse(response.body);
+    final firstItem = responseData.findAllElements('item').firstOrNull;
+
+    if (firstItem != null) {
+      station.pm10Value = int.tryParse(
+              firstItem.findAllElements('pm10Value').single.innerText) ??
+          0;
+      station.pm25Value = int.tryParse(
+              firstItem.findAllElements('pm25Value').single.innerText) ??
+          0;
+      station.dataTime = DateTime.parse(
+          firstItem.findAllElements('dataTime').single.innerText);
+      return station;
+    }
   }
   return null;
 }
