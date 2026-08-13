@@ -1,159 +1,132 @@
 # Fine Dust Tracker
 
-A Flutter application that tracks real-time fine dust (PM10 & PM2.5) air quality data based on your current location, using South Korea's public air quality API.
+> A Flutter app that reads PM10 and PM2.5 from the monitoring station nearest to you, not from the region you happen to be filed under.
 
-[한국어 버전은 아래를 참고하세요 ↓](#한국어)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Flutter](https://img.shields.io/badge/Flutter-3.4-02569B?logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-SDK-0175C2?logo=dart&logoColor=white)
+![Data](https://img.shields.io/badge/data-AirKorea-1f6feb)
 
----
+## Motivation
 
-## Features
+Air quality is reported by administrative region, but it is not measured that way. It is measured at a station, and the station nearest to you can sit several kilometers off and read differently from the district average that a weather app shows. On a bad day that difference is the difference between opening a window and not.
 
-- **Real-time air quality data** – Fetches PM10 and PM2.5 measurements from the nearest monitoring station
-- **GPS-based location detection** – Automatically determines your location and finds the closest station
-- **Station search** – Search for air quality data by station name
-- **Auto-refresh** – Manually refresh data with a tap
+So this app resolves a station rather than a place name. It takes the phone's coordinates, asks the public API which monitoring station is closest, and reports that station's numbers and nothing else. The station's name is shown alongside the reading, because a measurement without knowing where it was taken is the thing this was built to avoid.
+
+It was also the first app built after finishing a Flutter course, which shows in places the Limitations section names.
+
+## What It Does
+
+- Finds the monitoring station closest to the phone's current position and shows its PM10 and PM2.5 readings
+- Labels each reading on an eight-band scale, from `최고` to `최악`, and tints the whole screen to match
+- Shows the station name and the time the reading was taken, so a stale number is visible as stale
+- Searches stations by address, so a reading can be pulled for somewhere other than where the phone is
+- Refreshes on demand with a tap
+
+## Architecture
+
+Two public endpoints are chained, because neither one alone gets from a coordinate to a measurement.
+
+```mermaid
+graph TD
+    A[Geolocator: device coordinates] -->|WGS84 lat/lon| B[proj4dart: reproject]
+    B -->|Korea TM, EPSG:2097| C[MsrstnInfoInqireSvc]
+    C -->|nearest station name| D[ArpltnInforInqireSvc]
+    D -->|PM10 · PM2.5 · dataTime| E[MeasurementStation model]
+    E -->|band + color| F[Home screen]
+    G[Address search] -->|getMsrstnList| H[Station list] --> D
+```
+
+Both endpoints are asked for XML and parsed with the `xml` package. There is no backend, no database, and no caching layer. Every refresh is a fresh pair of network calls, and application state lives in one `StatefulWidget` driven by `setState`.
+
+### Stack
+
+`geolocator` · `geocoding` · `proj4dart` · `http` · `xml` · `flutter_dotenv` · `intl`
+
+## Tech Decisions
+
+| Component | Choice | Why this over alternatives |
+| --- | --- | --- |
+| Location target | Nearest station by coordinates (over a region name) | A region name would have been one API call instead of two, but it answers a different question. The reading a person cares about is the one taken closest to them, and the station that produces it does not follow district boundaries |
+| Coordinate system | Reprojection to Korea TM via `proj4dart` (over sending lat/lon) | The nearby-station endpoint does not accept WGS84. It takes Korea's legacy TM grid, which sits on the Bessel 1841 ellipsoid, so a seven-parameter datum shift is required rather than a simple formula. That transform string is the single least obvious line in the project |
+| Air quality bands | Eight bands (over the official four) | Four bands put a wide range of readings under one word, and `보통` covering most of the year makes the label useless for deciding anything. Eight bands move with the number. The cost is that these are not the bands the public sees elsewhere, and the thresholds' source is not recorded anywhere in the project |
+| API key | `flutter_dotenv` with `.env` outside version control | The data.go.kr key is per-account and rate limited, so it cannot ship in the repo. A build-time `--dart-define` would be tidier for CI, but there is no CI here and a `.env` file is one less thing to explain in setup |
+| State | `setState` in one screen (over a state management package) | There is one screen and no state shared across routes. Provider or Riverpod would have added a layer whose entire job is a problem this app does not have |
+
+## Results & Limitations
+
+**Nothing here has been measured.** There are no tests, no benchmarks, and no crash reporting. The app runs on the developer's device and has never been released or installed by anyone else.
+
+The one committed test is the scaffold `widget_test.dart` that `flutter create` generates, still asserting on a counter that this app does not have. It is not a passing test that covers nothing; it is a failing test nobody ran.
+
+Known defects, all present in the current code:
+
+- **A missing reading displays as the best possible air quality.** The API returns `-` when a station has no value for the hour. `int.tryParse('-')` gives null, `?? 0` turns it into `0`, and the model's guard for missing data checks `< 0`, so it never fires. The screen then labels `0` as `최고` and paints itself deep blue. The intent to handle missing data is in the code and the sentinel does not match what the API actually sends.
+- **The retry loops are far too aggressive.** `fineDustAPIService` retries up to 100 times **with no delay between attempts**, so a failing station hammers a public API with a hundred consecutive requests. `locationAPIService` retries up to 100 times with a 2 second delay, which blocks the UI for over three minutes before giving up. Neither loop distinguishes a transient 5xx from a rejected key, so an invalid key retries a hundred times and then fails silently.
+- **A one-element placemark list crashes the lookup.** `locationAPIService` checks `placemark.isNotEmpty` and then reads `placemark[1]`, which throws a range error whenever reverse geocoding returns exactly one result.
+- **Errors are swallowed.** The XML parse in the location service is wrapped in `catch (e) {}` with an empty body, and `searchAPIService` never checks the status code before parsing. A failed call is indistinguishable from a station with no data.
+- **Field extraction uses `.single`.** `pm10Value`, `pm25Value`, and `dataTime` are pulled with `findAllElements(...).single`, which throws if the field is absent rather than falling back.
+- **Dependency versions are unconstrained.** Everything except `flutter_dotenv` and `cupertino_icons` is declared as `any` in `pubspec.yaml`. The committed `pubspec.lock` keeps the current build reproducible, but a `flutter pub upgrade` would accept any future breaking release without complaint.
+- **No screenshots.** This is a UI product documented without a single image of its UI.
 
 ## Getting Started
 
 ### Prerequisites
 
 - Flutter SDK `>=3.4.0 <4.0.0`
-- Dart SDK
-- An API key from [data.go.kr](https://www.data.go.kr) (Korea Public Data Portal)
+- A service key from [data.go.kr](https://www.data.go.kr), issued for the AirKorea services below
 
 ### Setup
 
-1. Clone the repository:
+1. Clone and enter the repository:
+
    ```bash
-   git clone https://github.com/your-username/fine_dust_tracker.git
-   cd fine_dust_tracker
+   git clone https://github.com/liminal-cipher/fine-dust-tracker.git
+   cd fine-dust-tracker
    ```
 
 2. Install dependencies:
+
    ```bash
    flutter pub get
    ```
 
-3. Create a `.env` file in the project root:
+3. Create a `.env` file in the project root. It is gitignored:
+
    ```
-   API_KEY=your_data_go_kr_api_key
+   API_KEY=your_data_go_kr_service_key
    ```
 
-4. Run the app:
+4. Run:
+
    ```bash
    flutter run
    ```
 
-### Permissions
+Location permission is requested on first launch. Denying it leaves the current-location path with nothing to resolve; address search still works.
 
-The app requires location permissions to detect your current position. You will be prompted to grant access on first launch.
+### APIs Used
 
-## Tech Stack
+Both are AirKorea services published through data.go.kr, and one service key covers both.
 
-| Package | Purpose |
-|---|---|
-| `geolocator` | GPS location access |
-| `geocoding` | Reverse geocoding (coordinates → address) |
-| `proj4dart` | Coordinate projection (WGS84 → TM) |
-| `http` | HTTP requests to air quality API |
-| `xml` | Parsing XML API responses |
-| `flutter_dotenv` | Environment variable management |
-| `intl` | Date/time formatting (Korean locale) |
+| Service | Endpoint | Purpose |
+| --- | --- | --- |
+| `MsrstnInfoInqireSvc` | `getNearbyMsrstnList` | Nearest station for a Korea TM coordinate |
+| `MsrstnInfoInqireSvc` | `getMsrstnList` | Station lookup by address |
+| `ArpltnInforInqireSvc` | `getMsrstnAcctoRltmMesureDnsty` | Hourly PM10 and PM2.5 for a station |
 
-## API
+## Retrospective
 
-This app uses the [Air Korea](https://www.airkorea.or.kr) real-time measurement API (`ArpltnInforInqireSvc`) provided through data.go.kr.
+**The coordinate transform was the part worth building, and it is the part that is documented nowhere in the code.** Getting from a phone's GPS position to a Korean monitoring station means crossing from WGS84 to a grid defined on a nineteenth-century ellipsoid, and the seven-parameter shift that makes it correct is a bare string in the middle of a service function. Anyone reading that file, including a later me, has no way to tell whether those numbers are right or where they came from. If there is one comment this project needed, it is that one.
 
-## Project Structure
+**The error handling was written for the API behaving well.** A hundred retries with no delay is not a retry policy, it is a loop that happens to stop. The missing-value bug comes from the same place: the model has a branch for absent data, so the case was thought about, but the sentinel guarding it was chosen without checking what the API actually returns for a missing hour. Reading one real error response would have caught both.
 
-```
-lib/
-├── models/
-│   └── measurement_station_model.dart
-├── screens/
-│   └── home_screen.dart
-└── services/
-    ├── fine_dust_api_service.dart
-    ├── location_api_service.dart
-    └── search_api_service.dart
-```
+If picked up again, the order would be a real value type for a reading that can be absent, then a retry policy that separates transient failures from permanent ones, then screenshots.
 
----
+## Status
 
-<a name="한국어"></a>
+Frozen. Personal project, built 2024-05 as the first app after a Flutter course, with station search added 2026-03. It still runs, but there is no active plan to resume work. Last updated 2026-08-13.
 
-# 미세먼지 트래커
+## License
 
-현재 위치를 기반으로 실시간 미세먼지(PM10 & PM2.5) 대기질 정보를 제공하는 Flutter 앱입니다. 한국 공공데이터 포털의 에어코리아 API를 활용합니다.
-
-## 주요 기능
-
-- **실시간 대기질 정보** – 가장 가까운 측정소의 PM10 및 PM2.5 수치를 실시간으로 조회
-- **GPS 기반 위치 감지** – 현재 위치를 자동으로 파악하여 인근 측정소를 탐색
-- **측정소 검색** – 측정소 이름으로 대기질 정보 검색
-- **새로고침** – 버튼 탭으로 수동 데이터 갱신
-
-## 시작하기
-
-### 사전 준비
-
-- Flutter SDK `>=3.4.0 <4.0.0`
-- Dart SDK
-- [공공데이터 포털(data.go.kr)](https://www.data.go.kr) API 키
-
-### 설치 방법
-
-1. 저장소 클론:
-   ```bash
-   git clone https://github.com/your-username/fine_dust_tracker.git
-   cd fine_dust_tracker
-   ```
-
-2. 패키지 설치:
-   ```bash
-   flutter pub get
-   ```
-
-3. 프로젝트 루트에 `.env` 파일 생성:
-   ```
-   API_KEY=발급받은_API_키
-   ```
-
-4. 앱 실행:
-   ```bash
-   flutter run
-   ```
-
-### 권한 설정
-
-앱은 현재 위치 파악을 위해 위치 권한이 필요합니다. 최초 실행 시 권한 허용 요청이 표시됩니다.
-
-## 기술 스택
-
-| 패키지 | 용도 |
-|---|---|
-| `geolocator` | GPS 위치 접근 |
-| `geocoding` | 역지오코딩 (좌표 → 주소 변환) |
-| `proj4dart` | 좌표계 변환 (WGS84 → TM) |
-| `http` | 대기질 API HTTP 요청 |
-| `xml` | XML 응답 파싱 |
-| `flutter_dotenv` | 환경 변수 관리 |
-| `intl` | 날짜/시간 포맷 (한국어 로케일) |
-
-## API
-
-이 앱은 [에어코리아](https://www.airkorea.or.kr)의 실시간 측정 API(`ArpltnInforInqireSvc`)를 공공데이터 포털을 통해 활용합니다.
-
-## 프로젝트 구조
-
-```
-lib/
-├── models/
-│   └── measurement_station_model.dart
-├── screens/
-│   └── home_screen.dart
-└── services/
-    ├── fine_dust_api_service.dart
-    ├── location_api_service.dart
-    └── search_api_service.dart
-```
+MIT. See [LICENSE](LICENSE).
