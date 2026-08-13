@@ -1,6 +1,6 @@
 # Fine Dust Tracker
 
-> A Flutter app that reads PM10 and PM2.5 from the monitoring station nearest to you, not from the region you happen to be filed under.
+> A Flutter app that reads PM10 and PM2.5 from the nearest monitoring station, with nothing else on the screen.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Flutter](https://img.shields.io/badge/Flutter-3.4-02569B?logo=flutter&logoColor=white)
@@ -9,11 +9,11 @@
 
 ## Motivation
 
-Air quality is reported by administrative region, but it is not measured that way. It is measured at a station, and the station nearest to you can sit several kilometers off and read differently from the district average that a weather app shows. On a bad day that difference is the difference between opening a window and not.
+The fine dust app already on my family's phones carried more advertising than readout. Checking a number that takes two seconds to read meant sitting through an interstitial first, and they had mostly stopped bothering. That is the whole reason this exists: the same measurement, for the people I share a house with, with nothing else on the screen.
 
-So this app resolves a station rather than a place name. It takes the phone's coordinates, asks the public API which monitoring station is closest, and reports that station's numbers and nothing else. The station's name is shown alongside the reading, because a measurement without knowing where it was taken is the thing this was built to avoid.
+It was also the first thing I built against a real API. I had just finished a Flutter course and had never called one, so the AirKorea endpoints were where I found out what a service key, a rate limit, and an XML response body were. The defects listed under Limitations come from exactly that. The code handles the API behaving well, because an API behaving badly was not something I had seen yet.
 
-It was also the first app built after finishing a Flutter course, which shows in places the Limitations section names.
+The last idea to arrive was saving places. Once it worked for wherever the phone was standing, the obvious next thing was checking on parents and relatives who live elsewhere without having to travel there. Station search is the half of that which got built.
 
 ## What It Does
 
@@ -67,6 +67,7 @@ Known defects, all present in the current code:
 - **Errors are swallowed.** The XML parse in the location service is wrapped in `catch (e) {}` with an empty body, and `searchAPIService` never checks the status code before parsing. A failed call is indistinguishable from a station with no data.
 - **Field extraction uses `.single`.** `pm10Value`, `pm25Value`, and `dataTime` are pulled with `findAllElements(...).single`, which throws if the field is absent rather than falling back.
 - **Dependency versions are unconstrained.** Everything except `flutter_dotenv` and `cupertino_icons` is declared as `any` in `pubspec.yaml`. The committed `pubspec.lock` keeps the current build reproducible, but a `flutter pub upgrade` would accept any future breaking release without complaint.
+- **Places cannot be saved.** Station search resolves an address to a station and reads it once. Nothing persists, so checking on the same relative tomorrow means typing the address again. There is no storage dependency in the project at all.
 - **No screenshots.** This is a UI product documented without a single image of its UI.
 
 ## Getting Started
@@ -121,11 +122,13 @@ Both are AirKorea services published through data.go.kr, and one service key cov
 
 **The error handling was written for the API behaving well.** A hundred retries with no delay is not a retry policy, it is a loop that happens to stop. The missing-value bug comes from the same place: the model has a branch for absent data, so the case was thought about, but the sentinel guarding it was chosen without checking what the API actually returns for a missing hour. Reading one real error response would have caught both.
 
-If picked up again, the order would be a real value type for a reading that can be absent, then a retry policy that separates transient failures from permanent ones, then screenshots.
+**Search shipped without the thing it was for.** The point of looking up a station by address was to keep an eye on relatives who live somewhere else, and doing that means the app remembers them. What got built resolves an address and reads it once, so the second check costs exactly as much as the first. A list of saved stations is a smaller piece of work than the search that feeds it, and leaving it out is what kept the feature from being used.
+
+If picked up again, the order would be saved places, then a real value type for a reading that can be absent, then a retry policy that separates transient failures from permanent ones.
 
 ## Status
 
-Frozen. Personal project, built 2024-05 as the first app after a Flutter course, with station search added 2026-03. It still runs, but there is no active plan to resume work. Last updated 2026-08-13.
+Frozen. Personal project, built 2024-05 as the first app after a Flutter course, for family use rather than release, with station search added 2026-03. It still runs, but there is no active plan to resume work. Last updated 2026-08-14.
 
 ## License
 
