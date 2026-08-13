@@ -9,7 +9,7 @@
 
 ## Motivation
 
-The fine dust app already on my family's phones carried more advertising than readout. Checking a number that takes two seconds to read meant sitting through an interstitial first, and they had mostly stopped bothering. That is the whole reason this exists: the same measurement, for the people I share a house with, with nothing else on the screen.
+The air quality reading my family wanted is public, free, and updated every hour, and it still was not reaching them. Getting to it through the app they had meant working past everything placed in front of it first, and for a number that takes two seconds to read, that was enough friction to stop bothering. So the data was fine and the delivery was the problem. This app is the delivery: the same measurement, for the people I share a house with, and nothing else on the screen.
 
 It was also the first thing I built against a real API. I had just finished a Flutter course and had never called one, so the AirKorea endpoints were where I found out what a service key, a rate limit, and an XML response body were. The defects listed under Limitations come from exactly that. The code handles the API behaving well, because an API behaving badly was not something I had seen yet.
 
