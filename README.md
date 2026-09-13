@@ -1,6 +1,6 @@
 # Fine Dust Tracker
 
-> A Flutter app that reads PM10 and PM2.5 from the nearest monitoring station, with nothing else on the screen.
+> A Flutter app that reads PM10 and PM2.5 from the nearest monitoring station on a single screen.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Flutter](https://img.shields.io/badge/Flutter-3.4-02569B?logo=flutter&logoColor=white)
@@ -62,7 +62,7 @@ The one committed test is the scaffold `widget_test.dart` that `flutter create` 
 Known defects, all present in the current code:
 
 - **A missing reading displays as the best possible air quality.** The API returns `-` when a station has no value for the hour. `int.tryParse('-')` gives null, `?? 0` turns it into `0`, and the model's guard for missing data checks `< 0`, so it never fires. The screen then labels `0` as `최고` and paints itself deep blue. The intent to handle missing data is in the code and the sentinel does not match what the API actually sends.
-- **The retry loops are far too aggressive.** `fineDustAPIService` retries up to 100 times **with no delay between attempts**, so a failing station hammers a public API with a hundred consecutive requests. `locationAPIService` retries up to 100 times with a 2 second delay, which blocks the UI for over three minutes before giving up. Neither loop distinguishes a transient 5xx from a rejected key, so an invalid key retries a hundred times and then fails silently.
+- **The retry loops are far too aggressive.** `fineDustAPIService` retries up to 100 times with no delay between attempts, so a failing station can hammer a public API with a hundred consecutive requests. `locationAPIService` also retries up to 100 times and waits 2 seconds after non-200 responses, while successful HTTP responses that fail to yield a station can loop again immediately. Neither loop distinguishes transient failures from permanent ones.
 - **A one-element placemark list crashes the lookup.** `locationAPIService` checks `placemark.isNotEmpty` and then reads `placemark[1]`, which throws a range error whenever reverse geocoding returns exactly one result.
 - **Errors are swallowed.** The XML parse in the location service is wrapped in `catch (e) {}` with an empty body, and `searchAPIService` never checks the status code before parsing. A failed call is indistinguishable from a station with no data.
 - **Field extraction uses `.single`.** `pm10Value`, `pm25Value`, and `dataTime` are pulled with `findAllElements(...).single`, which throws if the field is absent rather than falling back.
@@ -128,7 +128,7 @@ If picked up again, the order would be saved places, then a real value type for 
 
 ## Status
 
-Frozen. Personal project, built 2024-05 as the first app after a Flutter course, for family use rather than release, with station search added 2026-03. It still runs, but there is no active plan to resume work. Last updated 2026-08-14.
+Frozen. Personal project, built 2024-05 as the first app after a Flutter course, for family use rather than release. Station search followed in 2024-06, and selecting a searched station was completed in 2026-08. It still runs, but there is no active plan to resume work. Last updated 2026-09-14.
 
 ## License
 
