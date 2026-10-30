@@ -2,7 +2,7 @@
 
 > A Flutter app that reads PM10 and PM2.5 from the nearest monitoring station on a single screen.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Licence: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Flutter](https://img.shields.io/badge/Flutter-3.4-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-SDK-0175C2?logo=dart&logoColor=white)
 ![Data](https://img.shields.io/badge/data-AirKorea-1f6feb)
@@ -33,7 +33,7 @@ graph TD
     B -->|Korea TM, EPSG:2097| C[MsrstnInfoInqireSvc]
     C -->|nearest station name| D[ArpltnInforInqireSvc]
     D -->|PM10 · PM2.5 · dataTime| E[MeasurementStation model]
-    E -->|band + color| F[Home screen]
+    E -->|band + colour| F[Home screen]
     G[Address search] -->|getMsrstnList| H[Station list] --> D
 ```
 
@@ -130,6 +130,6 @@ If picked up again, the order would be saved places, then a real value type for 
 
 Frozen. Personal project, built 2024-05 as the first app after a Flutter course, for family use rather than release. Station search followed in 2024-06, and selecting a searched station was completed in 2026-08. It still runs, but there is no active plan to resume work. Last updated 2026-09-14.
 
-## License
+## Licence
 
 MIT. See [LICENSE](LICENSE).

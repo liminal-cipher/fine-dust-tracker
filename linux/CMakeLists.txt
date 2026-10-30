@@ -9,7 +9,7 @@ set(BINARY_NAME "fine_dust_tracker")
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
 set(APPLICATION_ID "com.example.fine_dust_tracker")
 
-# Explicitly opt in to modern CMake behaviors to avoid warnings with recent
+# Explicitly opt in to modern CMake behaviours to avoid warnings with recent
 # versions of CMake.
 cmake_policy(SET CMP0063 NEW)
 
@@ -78,7 +78,7 @@ target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
 add_dependencies(${BINARY_NAME} flutter_assemble)
 
 # Only the install-generated bundle's copy of the executable will launch
-# correctly, since the resources must in the right relative locations. To avoid
+# correctly, since the resources must be in the right relative locations. To avoid
 # people trying to run the unbundled copy, put it in a subdirectory instead of
 # the default top-level location.
 set_target_properties(${BINARY_NAME}

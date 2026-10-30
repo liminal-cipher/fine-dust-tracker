@@ -8,7 +8,7 @@
 #include <string>
 
 // A class abstraction for a high DPI-aware Win32 Window. Intended to be
-// inherited from by classes that wish to specialize with custom
+// inherited from by classes that wish to specialise with custom
 // rendering and input handling
 class Win32Window {
  public:
@@ -31,7 +31,7 @@ class Win32Window {
   // Creates a win32 window with |title| that is positioned and sized using
   // |origin| and |size|. New windows are created on the default monitor. Window
   // sizes are specified to the OS in physical pixels, hence to ensure a
-  // consistent size this function will scale the inputted width and height as
+  // consistent size this function will scale the inputted width and height
   // as appropriate for the default monitor. The window is invisible until
   // |Show| is called. Returns true if the window was created successfully.
   bool Create(const std::wstring& title, const Point& origin, const Size& size);
@@ -56,7 +56,7 @@ class Win32Window {
   RECT GetClientArea();
 
  protected:
-  // Processes and route salient window messages for mouse handling,
+  // Processes and routes salient window messages for mouse handling,
   // size change and DPI. Delegates handling of these to member overloads that
   // inheriting classes can handle.
   virtual LRESULT MessageHandler(HWND window,
